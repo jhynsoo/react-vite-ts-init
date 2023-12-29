@@ -1,0 +1,482 @@
+#!/bin/bash
+
+# Check react+ts+vite project
+if [ ! -f package.json ] || [ ! -f vite.config.ts ] || [ ! -f tsconfig.json ]; then
+  echo "This is not a react + ts + vite project"
+  exit 1
+fi
+
+# Remove unnecessary files
+rm src/*.css
+shopt -s extglob
+rm src/!(Router|App).tsx
+shopt -u extglob
+rm src/assets/*
+rm public/*
+
+# Initialize App.tsx
+if grep -q "viteLogo" src/App.tsx; then
+  echo "import React from 'react';" > src/App.tsx
+  echo "import ReactDOM from 'react-dom/client';" >> src/App.tsx
+  echo "" >> src/App.tsx
+  echo "ReactDOM.createRoot(document.getElementById('root')!).render(" >> src/App.tsx
+  echo "  <React.StrictMode>" >> src/App.tsx
+  echo "    <div>App</div>" >> src/App.tsx
+  echo "  </React.StrictMode>" >> src/App.tsx
+  echo ");" >> src/App.tsx
+fi
+
+# Initialize index.html
+if grep -q "src/main.tsx" index.html; then
+  echo '<!doctype html>' > index.html
+  echo '<html lang="en">' >> index.html
+  echo '  <head>' >> index.html
+  echo '    <meta charset="UTF-8" />' >> index.html
+  echo '    <meta name="viewport" content="width=device-width, initial-scale=1.0" />' >> index.html
+  echo '    <title>React App</title>' >> index.html
+  echo '  </head>' >> index.html
+  echo '  <body>' >> index.html
+  echo '    <div id="root"></div>' >> index.html
+  echo '    <script type="module" src="/src/App.tsx"></script>' >> index.html
+  echo '  </body>' >> index.html
+  echo '</html>' >> index.html
+fi
+
+
+# install dev dependencies
+npm install eslint-config-airbnb eslint-config-airbnb-typescript eslint-config-prettier eslint-plugin-import eslint-plugin-jsx-a11y eslint-plugin-react eslint-import-resolver-typescript prettier vite-tsconfig-paths --save-dev
+
+# vite.config
+if ! grep -q "tsconfigPaths" vite.config.ts; then
+  echo "import { defineConfig } from 'vite';" > vite.config.ts
+  echo "import react from '@vitejs/plugin-react-swc';" >> vite.config.ts
+  echo "import tsconfigPaths from 'vite-tsconfig-paths';" >> vite.config.ts
+  echo "" >> vite.config.ts
+  echo "// https://vitejs.dev/config/" >> vite.config.ts
+  echo "export default defineConfig({" >> vite.config.ts
+  echo "  plugins: [react(), tsconfigPaths()]," >> vite.config.ts
+  echo "});" >> vite.config.ts
+fi
+
+# tsconfig
+if ! grep "@/*" tsconfig.json; then
+  echo '{' > tsconfig.json
+  echo '  "compilerOptions": {' >> tsconfig.json
+  echo '    "target": "ES2020",' >> tsconfig.json
+  echo '    "useDefineForClassFields": true,' >> tsconfig.json
+  echo '    "lib": ["ES2020", "DOM", "DOM.Iterable"],' >> tsconfig.json
+  echo '    "module": "ESNext",' >> tsconfig.json
+  echo '    "skipLibCheck": true,' >> tsconfig.json
+  echo '' >> tsconfig.json
+  echo '    /* Bundler mode */' >> tsconfig.json
+  echo '    "moduleResolution": "bundler",' >> tsconfig.json
+  echo '    "allowImportingTsExtensions": true,' >> tsconfig.json
+  echo '    "resolveJsonModule": true,' >> tsconfig.json
+  echo '    "isolatedModules": true,' >> tsconfig.json
+  echo '    "noEmit": true,' >> tsconfig.json
+  echo '    "jsx": "react-jsx",' >> tsconfig.json
+  echo '' >> tsconfig.json
+  echo '    /* Linting */' >> tsconfig.json
+  echo '    "strict": true,' >> tsconfig.json
+  echo '    "noUnusedLocals": true,' >> tsconfig.json
+  echo '    "noUnusedParameters": true,' >> tsconfig.json
+  echo '    "noFallthroughCasesInSwitch": true,' >> tsconfig.json
+  echo '    "paths": {' >> tsconfig.json
+  echo '      "@/*": ["./src/*"]' >> tsconfig.json
+  echo '    }' >> tsconfig.json
+  echo '  },' >> tsconfig.json
+  echo '  "include": ["src"],' >> tsconfig.json
+  echo '  "exclude": ["node_modules"],' >> tsconfig.json
+  echo '  "references": [{ "path": "./tsconfig.node.json" }]' >> tsconfig.json
+  echo '}' >> tsconfig.json
+fi
+
+# prettierrc
+if [ ! -f .prettierrc ]; then
+  echo '{' > .prettierrc
+  echo '  "singleQuote": true,' >> .prettierrc
+  echo '  "semi": true,' >> .prettierrc
+  echo '  "useTabs": false,' >> .prettierrc
+  echo '  "tabWidth": 2,' >> .prettierrc
+  echo '  "trailingComma": "all",' >> .prettierrc
+  echo '  "bracketSpacing": true,' >> .prettierrc
+  echo '  "arrowParens": "always"' >> .prettierrc
+  echo '}' >> .prettierrc
+fi
+
+# eslint
+if ! grep -q "import/parser" .eslintrc.cjs; then
+  echo "module.exports = {" > .eslintrc.cjs
+  echo "  root: true," >> .eslintrc.cjs
+  echo "  env: {" >> .eslintrc.cjs
+  echo "    browser: true," >> .eslintrc.cjs
+  echo "    es2021: true," >> .eslintrc.cjs
+  echo "  }," >> .eslintrc.cjs
+  echo "  extends: [" >> .eslintrc.cjs
+  echo "    'eslint:recommended'," >> .eslintrc.cjs
+  echo "    'airbnb'," >> .eslintrc.cjs
+  echo "    'airbnb/hooks'," >> .eslintrc.cjs
+  echo "    'plugin:@typescript-eslint/recommended'," >> .eslintrc.cjs
+  echo "    'plugin:react/recommended'," >> .eslintrc.cjs
+  echo "    'prettier'," >> .eslintrc.cjs
+  echo "  ]," >> .eslintrc.cjs
+  echo "  overrides: [" >> .eslintrc.cjs
+  echo "    {" >> .eslintrc.cjs
+  echo "      env: {" >> .eslintrc.cjs
+  echo "        node: true," >> .eslintrc.cjs
+  echo "      }," >> .eslintrc.cjs
+  echo "      files: ['.eslintrc.{js,cjs}']," >> .eslintrc.cjs
+  echo "      parserOptions: {" >> .eslintrc.cjs
+  echo "        sourceType: 'script'," >> .eslintrc.cjs
+  echo "      }," >> .eslintrc.cjs
+  echo "    }," >> .eslintrc.cjs
+  echo "  ]," >> .eslintrc.cjs
+  echo "  parser: '@typescript-eslint/parser'," >> .eslintrc.cjs
+  echo "  parserOptions: {" >> .eslintrc.cjs
+  echo "    ecmaVersion: 'latest'," >> .eslintrc.cjs
+  echo "    sourceType: 'module'," >> .eslintrc.cjs
+  echo "  }," >> .eslintrc.cjs
+  echo "  plugins: ['@typescript-eslint', 'react']," >> .eslintrc.cjs
+  echo "  rules: {" >> .eslintrc.cjs
+  echo "    eqeqeq: 'warn'," >> .eslintrc.cjs
+  echo "    'react/prop-types': 'off'," >> .eslintrc.cjs
+  echo "    'no-extra-semi': 'error'," >> .eslintrc.cjs
+  echo "    'react/jsx-filename-extension': [" >> .eslintrc.cjs
+  echo "      'warn'," >> .eslintrc.cjs
+  echo "      {" >> .eslintrc.cjs
+  echo "        extensions: ['.jsx', '.tsx']," >> .eslintrc.cjs
+  echo "      }," >> .eslintrc.cjs
+  echo "    ]," >> .eslintrc.cjs
+  echo "    'import/extensions': [" >> .eslintrc.cjs
+  echo "      'error'," >> .eslintrc.cjs
+  echo "      {" >> .eslintrc.cjs
+  echo "        pattern: {" >> .eslintrc.cjs
+  echo "          js: 'never'," >> .eslintrc.cjs
+  echo "          jsx: 'never'," >> .eslintrc.cjs
+  echo "          ts: 'never'," >> .eslintrc.cjs
+  echo "          tsx: 'never'," >> .eslintrc.cjs
+  echo "        }," >> .eslintrc.cjs
+  echo "      }," >> .eslintrc.cjs
+  echo "    ]," >> .eslintrc.cjs
+  echo "    'import/prefer-default-export': 'off'," >> .eslintrc.cjs
+  echo "    'react/react-in-jsx-scope': 'off'," >> .eslintrc.cjs
+  echo "    'react/require-default-props': 'off'," >> .eslintrc.cjs
+  echo "  }," >> .eslintrc.cjs
+  echo "  settings: {" >> .eslintrc.cjs
+  echo "    'import/parsers': {" >> .eslintrc.cjs
+  echo "      '@typescript-eslint/parser': ['.ts', '.tsx']," >> .eslintrc.cjs
+  echo "    }," >> .eslintrc.cjs
+  echo "    'import/resolver': {" >> .eslintrc.cjs
+  echo "      node: {" >> .eslintrc.cjs
+  echo "        extensions: ['.js', '.jsx', '.ts', '.tsx']," >> .eslintrc.cjs
+  echo "      }," >> .eslintrc.cjs
+  echo "      typescript: {}," >> .eslintrc.cjs
+  echo "    }," >> .eslintrc.cjs
+  echo "  }," >> .eslintrc.cjs
+  echo "  ignorePatterns: ['node_modules/', 'vite.config.ts', 'dist/']," >> .eslintrc.cjs
+  echo "};" >> .eslintrc.cjs
+fi
+
+[ ! -d .git ] && git init;
+
+# Create src directory
+[ ! -d src/assets ] && mkdir src/assets
+[ ! -d src/components ] && mkdir src/components
+[ ! -d src/pages ] && mkdir src/pages
+[ ! -d src/hooks ] && mkdir src/hooks
+[ ! -d src/utils ] && mkdir src/utils
+[ ! -d src/features ] && mkdir src/features
+
+# install react-router-dom
+ROUTER_INSTALLED=false
+if ! grep -q "react-router-dom" package.json; then
+  while true; do
+    echo "┌────────────────────────────────┐"
+    echo "│ Install react-router-dom (Y/n) │"
+    echo "└────────────────────────────────┘"
+    read install_router
+    if [ "$install_router" = "Y" ] || [ "$install_router" = "y" ] || [ "$install_router" = "" ] ; then
+      ROUTER_INSTALLED=true
+      npm install react-router-dom @types/react-router-dom
+      [ ! -d src/Router.tsx ] && (
+        echo "import { BrowserRouter, Route, Routes } from 'react-router-dom';" > src/Router.tsx
+        echo "" >> src/Router.tsx
+        echo "export default function Router() {" >> src/Router.tsx
+        echo "  return (" >> src/Router.tsx
+        echo "    <BrowserRouter>" >> src/Router.tsx
+        echo "      <Routes>" >> src/Router.tsx
+        echo "        <Route path=\"/\" element={<div>Home</div>} />" >> src/Router.tsx
+        echo "      </Routes>" >> src/Router.tsx
+        echo "    </BrowserRouter>" >> src/Router.tsx
+        echo "  );" >> src/Router.tsx
+        echo "}" >> src/Router.tsx
+      )
+      break
+    elif [ "$install_router" = "N" ] || [ "$install_router" = "n" ] ; then
+      echo "Skip install react-router-dom"
+      break
+    else
+      echo "Please enter y or n"
+    fi
+  done
+else
+  echo "react-router-dom already installed"
+  ROUTER_INSTALLED=true
+fi
+
+# install recoil
+RECOIL_INSTALLED=false
+if ! grep -q "recoil" package.json; then
+  while true; do
+    echo "┌──────────────────────┐"
+    echo "│ Install recoil (Y/n) │"
+    echo "└──────────────────────┘"
+    read install_recoil
+    if [ "$install_recoil" = "Y" ] || [ "$install_recoil" = "y" ] || [ "$install_recoil" = "" ] ; then
+      RECOIL_INSTALLED=true
+      npm install recoil
+      break
+    elif [ "$install_recoil" = "N" ] || [ "$install_recoil" = "n" ] ; then
+      echo "Skip install recoil"
+      break
+    else
+      echo "Please enter y or n"
+    fi
+  done
+else
+  echo "recoil already installed"
+  RECOIL_INSTALLED=true
+fi
+
+# install axios
+if ! grep -q "axios" package.json; then
+  while true; do
+    echo "┌──────────────────────┐"
+    echo "│ Install axios (Y/n)   │"
+    echo "└──────────────────────┘"
+    read install_axios
+    if [ "$install_axios" = "Y" ] || [ "$install_axios" = "y" ] || [ "$install_axios" = "" ] ; then
+      npm install axios
+      break
+    elif [ "$install_axios" = "N" ] || [ "$install_axios" = "n" ] ; then
+      echo "Skip install axios"
+      break
+    else
+      echo "Please enter y or n"
+    fi
+  done
+else
+  echo "axios already installed"
+fi
+
+# install react-query
+QUERY_INSTALLED=false
+if ! grep -q "react-query" package.json; then
+  while true; do
+    echo "┌───────────────────────────┐"
+    echo "│ Install react-query (Y/n) │"
+    echo "└───────────────────────────┘"
+    read install_react_query
+    if [ "$install_react_query" = "Y" ] || [ "$install_react_query" = "y" ] || [ "$install_react_query" = "" ] ; then
+      QUERY_INSTALLED=true
+      npm install react-query
+      break
+    elif [ "$install_react_query" = "N" ] || [ "$install_react_query" = "n" ] ; then
+      echo "Skip install react-query"
+      break
+    else
+      echo "Please enter y or n"
+    fi
+  done
+else
+  echo "react-query already installed"
+  QUERY_INSTALLED=true
+fi
+
+# install emotion/styled
+EMOTION_INSTALLED=false
+if ! grep -q "emotion/styled" package.json; then
+  while true; do
+    echo "┌──────────────────────────────┐"
+    echo "│ Install emotion/styled (Y/n) │"
+    echo "└──────────────────────────────┘"
+    read install_emotion
+    if [ "$install_emotion" = "Y" ] || [ "$install_emotion" = "y" ] || [ "$install_emotion" = "" ] ; then
+      EMOTION_INSTALLED=true
+      npm i @emotion/styled @emotion/react
+      break
+    elif [ "$install_emotion" = "N" ] || [ "$install_emotion" = "n" ] ; then
+      echo "Skip install emotion/styled"
+      break
+    else
+      echo "Please enter y or n"
+    fi
+  done
+else
+  echo "emotion/styled already installed"
+  EMOTION_INSTALLED=true
+fi
+
+# emotion typescript support
+if [ "$EMOTION_INSTALLED" = true ] && [ ! -f src/emotion.d.ts ]; then
+  echo "import '@emotion/react';" > src/emotion.d.ts
+  echo "" >> src/emotion.d.ts
+  echo "declare module '@emotion/react' {" >> src/emotion.d.ts
+  echo "  export interface Theme {}" >> src/emotion.d.ts
+  echo "}" >> src/emotion.d.ts
+fi
+
+# reset css emotion
+if [ "$EMOTION_INSTALLED" = true ] && [ ! -f src/styles/globalStyles.ts ]; then
+  echo "import { css } from '@emotion/react';" > src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "const resetStyles = css\`" >> src/styles/globalStyles.ts
+  echo "  *," >> src/styles/globalStyles.ts
+  echo "  *::before," >> src/styles/globalStyles.ts
+  echo "  *::after {" >> src/styles/globalStyles.ts
+  echo "    box-sizing: border-box;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "  html {" >> src/styles/globalStyles.ts
+  echo "    -moz-text-size-adjust: none;" >> src/styles/globalStyles.ts
+  echo "    -webkit-text-size-adjust: none;" >> src/styles/globalStyles.ts
+  echo "    text-size-adjust: none;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "  body," >> src/styles/globalStyles.ts
+  echo "  h1," >> src/styles/globalStyles.ts
+  echo "  h2," >> src/styles/globalStyles.ts
+  echo "  h3," >> src/styles/globalStyles.ts
+  echo "  h4," >> src/styles/globalStyles.ts
+  echo "  p," >> src/styles/globalStyles.ts
+  echo "  figure," >> src/styles/globalStyles.ts
+  echo "  blockquote," >> src/styles/globalStyles.ts
+  echo "  dl," >> src/styles/globalStyles.ts
+  echo "  dd {" >> src/styles/globalStyles.ts
+  echo "    margin-block-end: 0;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "  ul[role='list']," >> src/styles/globalStyles.ts
+  echo "  ol[role='list'] {" >> src/styles/globalStyles.ts
+  echo "    list-style: none;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "  body {" >> src/styles/globalStyles.ts
+  echo "    min-height: 100vh;" >> src/styles/globalStyles.ts
+  echo "    line-height: 1.5;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "  h1," >> src/styles/globalStyles.ts
+  echo "  h2," >> src/styles/globalStyles.ts
+  echo "  h3," >> src/styles/globalStyles.ts
+  echo "  h4," >> src/styles/globalStyles.ts
+  echo "  button," >> src/styles/globalStyles.ts
+  echo "  input," >> src/styles/globalStyles.ts
+  echo "  label {" >> src/styles/globalStyles.ts
+  echo "    line-height: 1.1;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "  h1," >> src/styles/globalStyles.ts
+  echo "  h2," >> src/styles/globalStyles.ts
+  echo "  h3," >> src/styles/globalStyles.ts
+  echo "  h4 {" >> src/styles/globalStyles.ts
+  echo "    text-wrap: balance;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "  a:not([class]) {" >> src/styles/globalStyles.ts
+  echo "    text-decoration-skip-ink: auto;" >> src/styles/globalStyles.ts
+  echo "    color: currentColor;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "  img," >> src/styles/globalStyles.ts
+  echo "  picture {" >> src/styles/globalStyles.ts
+  echo "    max-width: 100%;" >> src/styles/globalStyles.ts
+  echo "    display: block;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "  input," >> src/styles/globalStyles.ts
+  echo "  button," >> src/styles/globalStyles.ts
+  echo "  textarea," >> src/styles/globalStyles.ts
+  echo "  select {" >> src/styles/globalStyles.ts
+  echo "    font: inherit;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "  textarea:not([rows]) {" >> src/styles/globalStyles.ts
+  echo "    min-height: 10em;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "  :target {" >> src/styles/globalStyles.ts
+  echo "    scroll-margin-block: 5ex;" >> src/styles/globalStyles.ts
+  echo "  }" >> src/styles/globalStyles.ts
+  echo "\`;" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "const globalStyles = css\`" >> src/styles/globalStyles.ts
+  echo "  \${resetStyles}" >> src/styles/globalStyles.ts
+  echo "\`;" >> src/styles/globalStyles.ts
+  echo "" >> src/styles/globalStyles.ts
+  echo "export default globalStyles;" >> src/styles/globalStyles.ts
+fi
+
+# install framer-motion
+if ! grep -q "framer-motion" package.json; then
+  while true; do
+    echo "┌──────────────────────────────┐"
+    echo "│ Install framer-motion (y/N)  │"
+    echo "└──────────────────────────────┘"
+    read install_framer_motion
+    if [ "$install_framer_motion" = "Y" ] || [ "$install_framer_motion" = "y" ]; then
+      npm install framer-motion
+      break
+    elif [ "$install_framer_motion" = "N" ] || [ "$install_framer_motion" = "n" ] || [ "$install_framer_motion" = "" ]; then
+      echo "Skip install framer-motion"
+      break
+    else
+      echo "Please enter y or n"
+    fi
+  done
+fi
+
+IMPORT="import ReactDOM from 'react-dom/client';"
+APP_JSX="<div>App</div>"
+if [ "$ROUTER_INSTALLED" = true ]; then
+  IMPORT=$IMPORT"import Router from './Router';"
+  APP_JSX="<Router />"
+fi
+
+if [ "$QUERY_INSTALLED" = true ]; then
+  IMPORT=$IMPORT"import { QueryClient, QueryClientProvider } from 'react-query';""const queryClient = new QueryClient();"
+  APP_JSX="<QueryClientProvider client={queryClient}>$APP_JSX</QueryClientProvider>"
+fi
+
+if [ "$EMOTION_INSTALLED" = true ]; then
+  IMPORT=$IMPORT"import { Global, ThemeProvider } from '@emotion/react';"
+  APP_JSX="<ThemeProvider theme={{}}><Global styles={{}} />$APP_JSX</ThemeProvider>"
+fi
+
+if [ "$RECOIL_INSTALLED" = true ]; then
+  [ ! -d src/recoil ] && mkdir src/recoil
+  IMPORT=$IMPORT"import { RecoilRoot } from 'recoil';"
+  APP_JSX="<RecoilRoot>$APP_JSX</RecoilRoot>"
+fi
+
+# App.tsx
+echo "import React from 'react';$IMPORT" > src/App.tsx
+echo "" >> src/App.tsx
+echo "function App() {return (<React.StrictMode>$APP_JSX</React.StrictMode>);}" >> src/App.tsx
+echo "" >> src/App.tsx
+echo "ReactDOM.createRoot(document.getElementById('root')!).render(<App />);" >> src/App.tsx
+
+# format files
+npx eslint --fix src
+npx prettier --write src
+
+# initialize README.md
+if grep -q "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules." README.md; then
+  PROJECT_NAME=${PWD##*/}
+  echo "# $PROJECT_NAME" > README.md
+  echo "Created README.md"
+fi
+
+echo ""
+echo "Finished!"
+echo ""
